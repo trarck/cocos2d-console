@@ -648,15 +648,21 @@ class TPCreator(object):
         cocos_root = self.cocos_root
         dst_project_dir = self.project_dir
         dst_project_name = self.project_name
-        src_cocos_root = v['src_cocos_root']            
-                
+        src_cocos_root = v['src_cocos_root']
+              
+        if v.has_key('dst_cocos_deep'):
+            dst_cocos_deep=v['dst_cocos_deep'] 
+        else:
+            dst_cocos_deep=""        
+        
         project_dir_relative_cocos_root = self.relation_path #os.path.relpath(cocos_root,dst_project_dir)
         
         if cocos.os_is_win32():
             src_cocos_root=src_cocos_root.replace("/","\\")
             project_dir_relative_cocos_root=project_dir_relative_cocos_root.replace("/","\\")
+            dst_cocos_deep=dst_cocos_deep.replace("/","\\")
             
-        dst_cocos_root= os.path.join(os.path.dirname(src_cocos_root),project_dir_relative_cocos_root)
+        dst_cocos_root= os.path.join(os.path.dirname(src_cocos_root),dst_cocos_deep,project_dir_relative_cocos_root)
         
         cocos.Logging.info("> Replace the cocos root from '%s' to '%s'" % (src_cocos_root, dst_cocos_root))
         
@@ -693,8 +699,13 @@ class TPCreator(object):
         cocos_root = self.cocos_root
         dst_project_dir = self.project_dir
         dst_project_name = self.project_name
-        src_cocos_root = v['src_cocos_root']            
-        
+        src_cocos_root = v['src_cocos_root']
+                  
+        if v.has_key('dst_cocos_deep'):
+            dst_cocos_deep=v['dst_cocos_deep'] 
+        else:
+            dst_cocos_deep=""
+
         project_dir_relative_cocos_root = self.relation_path #os.path.relpath(cocos_root,dst_project_dir)
         
         first_sep="/"
@@ -703,9 +714,10 @@ class TPCreator(object):
         if cocos.os_is_win32():
             src_cocos_root=src_cocos_root.replace("/","\\")
             project_dir_relative_cocos_root=project_dir_relative_cocos_root.replace("/","\\")
+            dst_cocos_deep=dst_cocos_deep.replace("/","\\")
             first_sep="\\"
         
-        dst_cocos_root= os.path.join(first_sep,project_dir_relative_cocos_root)
+        dst_cocos_root= os.path.join(first_sep,dst_cocos_deep,project_dir_relative_cocos_root)
                 
         cocos.Logging.info("> Replace the cmake cocos root from '%s' to '%s'" % (src_cocos_root, dst_cocos_root))
         
