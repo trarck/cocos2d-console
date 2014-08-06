@@ -59,7 +59,15 @@ class CCPluginNew(cocos.CCPlugin):
         self._other_opts = args
         self._mac_bundleid = args.mac_bundleid
         self._ios_bundleid = args.ios_bundleid
-
+        self._no_copy=args.no_copy
+        self._relation_path=args.relation_path
+        
+        if  self._no_copy and self._relation_path is None:
+            self._relation_path=os.path.relpath(self._cocosroot,self._projdir)
+        
+        # cocos.Logging.info("> from '%d' to '%s'" % (self._no_copy, self._relation_path))
+            
+        
         self._templates = Templates(args.language, self._templates_root, args.template)
         if self._templates.none_active():
             self._templates.select_one()
@@ -88,7 +96,11 @@ class CCPluginNew(cocos.CCPlugin):
 
         group = parser.add_argument_group("lua/js project arguments")
         group.add_argument("--no-native", action="store_true", dest="no_native", help="No native support.")
-
+        
+        group = parser.add_argument_group("no copy argument")
+        group.add_argument("--no-copy", action="store_true", dest="no_copy", help="No copy cocos project .")
+        group.add_argument("--relation-path", dest="relation_path",help="set project relation to cocos2dx dir")
+        
         # parse the params
         args = parser.parse_args(argv)
 
@@ -116,7 +128,8 @@ class CCPluginNew(cocos.CCPlugin):
 
         tp_dir = self._templates.template_path()
 
-        creator = TPCreator(self._lang, self._cocosroot, self._projname, self._projdir, self._tpname, tp_dir, self._package, self._mac_bundleid, self._ios_bundleid)
+        creator = TPCreator(self._lang, self._cocosroot, self._projname, self._projdir, self._tpname,
+         tp_dir, self._package, self._mac_bundleid, self._ios_bundleid,self._no_copy,self._relation_path)
         # do the default creating step
         creator.do_default_step()
 
@@ -261,7 +274,7 @@ class Templates(object):
 
 
 class TPCreator(object):
-    def __init__(self, lang, cocos_root, project_name, project_dir, tp_name, tp_dir, project_package, mac_id, ios_id):
+    def __init__(self, lang, cocos_root, project_name, project_dir, tp_name, tp_dir, project_package, mac_id, ios_id,no_copy,relation_path):
         self.lang = lang
         self.cocos_root = cocos_root
         self.project_dir = project_dir
@@ -273,6 +286,8 @@ class TPCreator(object):
         self.tp_name = tp_name
         self.tp_dir = tp_dir
         self.tp_json = 'cocos-project-template.json'
+        self.no_copy=no_copy
+        self.relation_path=relation_path
 
         tp_json_path = os.path.join(tp_dir, self.tp_json)
         if not os.path.exists(tp_json_path):
@@ -391,6 +406,11 @@ class TPCreator(object):
 
 
     def append_x_engine(self, v):
+        
+        if self.no_copy:
+            cocos.Logging.info("> Not Copying cocos2d-x files...")
+            return
+        
         src = os.path.join(self.cocos_root, v['from'])
         dst = os.path.join(self.project_dir, v['to'])
 
@@ -410,7 +430,7 @@ class TPCreator(object):
 
         #begin copy engine
         cocos.Logging.info("> Copying cocos2d-x files...")
-
+        
         for index in range(len(fileList)):
             srcfile = os.path.join(src,fileList[index])
             dstfile = os.path.join(dst,fileList[index])
@@ -539,5 +559,165 @@ class TPCreator(object):
             dst = f.replace("PROJECT_NAME", dst_project_name)
             if os.path.exists(os.path.join(dst_project_dir, dst)):
                 replace_string(os.path.join(dst_project_dir, dst), src_bundleid, dst_bundleid)
+            else:
+                cocos.Logging.warning("%s not found" % os.path.join(dst_project_dir, dst))
+    
+    # def project_replace_cocos_search_path_unix(self, v):
+    #     """ will modify the content of the file
+    #     """
+    #
+    #     cocos_root = self.cocos_root
+    #     dst_project_dir = self.project_dir
+    #     dst_project_name = self.project_name
+    #     src_cocos_root = v['src_cocos_root']
+    #
+    #     project_dir_relative_cocos_root = os.path.relpath(cocos_root,dst_project_dir)
+    #
+    #     dst_cocos_root= os.path.join(os.path.dirname(src_cocos_root),project_dir_relative_cocos_root)
+    #
+    #     cocos.Logging.info("> Replace the cocos root from '%s' to '%s'" % (src_cocos_root, dst_cocos_root))
+    #
+    #     #replace unix file
+    #     files = v['unix_files']
+    #     for f in files:
+    #         dst = f.replace("PROJECT_NAME", dst_project_name)
+    #         if os.path.exists(os.path.join(dst_project_dir, dst)):
+    #             replace_string(os.path.join(dst_project_dir, dst), src_cocos_root, dst_cocos_root)
+    #         else:
+    #             cocos.Logging.warning("%s not found" % os.path.join(dst_project_dir, dst))
+    #
+    #     #replace windows file
+    #     src_cocos_root=src_cocos_root.replace("/","\\")
+    #     dst_cocos_root=dst_cocos_root.replace("/","\\")
+    #     files = v['win_files']
+    #     for f in files:
+    #         dst = f.replace("PROJECT_NAME", dst_project_name)
+    #         if os.path.exists(os.path.join(dst_project_dir, dst)):
+    #             replace_string(os.path.join(dst_project_dir, dst), src_cocos_root, dst_cocos_root)
+    #         else:
+    #             cocos.Logging.warning("%s not found" % os.path.join(dst_project_dir, dst))
+    #
+    # def project_replace_cocos_search_path_win(self, v):
+    #     """ will modify the content of the file
+    #     """
+    #
+    #     cocos_root = self.cocos_root
+    #     dst_project_dir = self.project_dir
+    #     dst_project_name = self.project_name
+    #     src_cocos_root = v['src_cocos_root']
+    #
+    #     src_cocos_root=src_cocos_root.replace("/","\\")
+    #
+    #     project_dir_relative_cocos_root = os.path.relpath(cocos_root,dst_project_dir)
+    #
+    #     dst_cocos_root= os.path.join(os.path.dirname(src_cocos_root),project_dir_relative_cocos_root)
+    #
+    #     cocos.Logging.info("> Replace the cocos root from '%s' to '%s'" % (src_cocos_root, dst_cocos_root))
+    #
+    #     #replace unix file
+    #     src_cocos_root=src_cocos_root.replace("\\","/")
+    #     dst_cocos_root=dst_cocos_root.replace("\\","/")
+    #
+    #     files = v['unix_files']
+    #     for f in files:
+    #         dst = f.replace("PROJECT_NAME", dst_project_name)
+    #         if os.path.exists(os.path.join(dst_project_dir, dst)):
+    #             replace_string(os.path.join(dst_project_dir, dst), src_cocos_root, dst_cocos_root)
+    #         else:
+    #             cocos.Logging.warning("%s not found" % os.path.join(dst_project_dir, dst))
+    #
+    #     #replace windows file
+    #     src_cocos_root=src_cocos_root.replace("/","\\")
+    #     dst_cocos_root=dst_cocos_root.replace("/","\\")
+    #     files = v['win_files']
+    #     for f in files:
+    #         dst = f.replace("PROJECT_NAME", dst_project_name)
+    #         if os.path.exists(os.path.join(dst_project_dir, dst)):
+    #             replace_string(os.path.join(dst_project_dir, dst), src_cocos_root, dst_cocos_root)
+    #         else:
+    #             cocos.Logging.warning("%s not found" % os.path.join(dst_project_dir, dst))
+    #
+    #    
+    def project_replace_cocos_search_path(self, v):
+        """ will modify the content of the file
+        """
+        
+        if not self.no_copy:
+            return
+
+        cocos_root = self.cocos_root
+        dst_project_dir = self.project_dir
+        dst_project_name = self.project_name
+        src_cocos_root = v['src_cocos_root']            
+                
+        project_dir_relative_cocos_root = self.relation_path #os.path.relpath(cocos_root,dst_project_dir)
+        
+        if cocos.os_is_win32():
+            src_cocos_root=src_cocos_root.replace("/","\\")
+            project_dir_relative_cocos_root=project_dir_relative_cocos_root.replace("/","\\")
+            
+        dst_cocos_root= os.path.join(os.path.dirname(src_cocos_root),project_dir_relative_cocos_root)
+        
+        cocos.Logging.info("> Replace the cocos root from '%s' to '%s'" % (src_cocos_root, dst_cocos_root))
+        
+        #replace unix file
+        if cocos.os_is_win32():
+            src_cocos_root=src_cocos_root.replace("\\","/")
+            dst_cocos_root=dst_cocos_root.replace("\\","/")
+        
+        files = v['unix_files']
+        for f in files:
+            dst = f.replace("PROJECT_NAME", dst_project_name)
+            if os.path.exists(os.path.join(dst_project_dir, dst)):
+                replace_string(os.path.join(dst_project_dir, dst), src_cocos_root, dst_cocos_root)
+            else:
+                cocos.Logging.warning("%s not found" % os.path.join(dst_project_dir, dst))
+        
+        #replace windows file
+        src_cocos_root=src_cocos_root.replace("/","\\")
+        dst_cocos_root=dst_cocos_root.replace("/","\\")
+        files = v['win_files']
+        for f in files:
+            dst = f.replace("PROJECT_NAME", dst_project_name)
+            if os.path.exists(os.path.join(dst_project_dir, dst)):
+                replace_string(os.path.join(dst_project_dir, dst), src_cocos_root, dst_cocos_root)
+            else:
+                cocos.Logging.warning("%s not found" % os.path.join(dst_project_dir, dst))
+                
+    def project_replace_cocos_search_path_cmake(self, v):
+        """ will modify the content of the file
+        """
+        if not self.no_copy:
+            return
+            
+        cocos_root = self.cocos_root
+        dst_project_dir = self.project_dir
+        dst_project_name = self.project_name
+        src_cocos_root = v['src_cocos_root']            
+        
+        project_dir_relative_cocos_root = self.relation_path #os.path.relpath(cocos_root,dst_project_dir)
+        
+        first_sep="/"
+        
+        #convert to window path sep.becase use join
+        if cocos.os_is_win32():
+            src_cocos_root=src_cocos_root.replace("/","\\")
+            project_dir_relative_cocos_root=project_dir_relative_cocos_root.replace("/","\\")
+            first_sep="\\"
+        
+        dst_cocos_root= os.path.join(first_sep,project_dir_relative_cocos_root)
+                
+        cocos.Logging.info("> Replace the cmake cocos root from '%s' to '%s'" % (src_cocos_root, dst_cocos_root))
+        
+        #convert to unix path sep.replace in files
+        if cocos.os_is_win32():
+            src_cocos_root=src_cocos_root.replace("\\","/")
+            dst_cocos_root=dst_cocos_root.replace("\\","/")
+        
+        files = v['files']
+        for f in files:
+            dst = f.replace("PROJECT_NAME", dst_project_name)
+            if os.path.exists(os.path.join(dst_project_dir, dst)):
+                replace_string(os.path.join(dst_project_dir, dst), src_cocos_root, dst_cocos_root)
             else:
                 cocos.Logging.warning("%s not found" % os.path.join(dst_project_dir, dst))
