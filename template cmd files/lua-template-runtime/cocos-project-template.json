@@ -171,7 +171,7 @@
         },
         "project_replace_cocos_search_path": {
             "src_cocos_root":"../../cocos2d-x",
-		 "dst_cocos_deep":"../",
+		    "dst_cocos_deep":"../",
             "unix_files":[
 			"frameworks/runtime-src/proj.android/project.properties",
                "frameworks/runtime-src/proj.android/build-cfg.json",
@@ -186,7 +186,7 @@
         },
         "project_replace_cocos_search_path_cmake": {
             "src_cocos_root":"/cocos2d-x",
-		 "dst_cocos_deep":"../",
+		    "dst_cocos_deep":"../",
             "files":[
                "frameworks/CMakeLists.txt"
             ]

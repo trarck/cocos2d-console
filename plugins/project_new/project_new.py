@@ -86,7 +86,7 @@ class CCPluginNew(cocos.CCPlugin):
         # cocos.Logging.info("> from '%d' to '%s'" % (self._no_copy, self._relation_path))
             
         
-        self._templates = Templates(args.language, self._templates_root, args.template)
+        self._templates = Templates(args.language, self._templates_paths, args.template)
         if self._templates.none_active():
             self._templates.select_one()
 
